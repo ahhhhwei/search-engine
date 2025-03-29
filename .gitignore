@@ -1,4 +1,5 @@
 /Crawler/ruanyifeng_blog/
-test.cc
+test*
 raw.txt
 .vscode/
+parser
