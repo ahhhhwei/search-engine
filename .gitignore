@@ -6,3 +6,5 @@ parser
 cpp-httplib
 cppjieba
 dict
+debug
+http_server

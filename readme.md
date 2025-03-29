@@ -9,11 +9,15 @@
    ```
 4. 安装 jsoncpp 库
    ```bash
-   yum install -y jsoncpp-devel
+   yum -y install epel-release
+   yum install jsoncpp.x86_64
+   yum install jsoncpp-doc.noarch
+   yum install jsoncpp-devel.x86_64
    ```
 5. 安装 jieba 分词库
    ```bash
    git clone https://gitee.com/mohatarem/cppjieba.git
+
    ```
 
 6. 安装 httplib 库
