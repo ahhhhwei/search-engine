@@ -101,33 +101,109 @@ static bool ParseTitle(const std::string &file, std::string *title)
 
 static bool ParseContent(const std::string &file, std::string *content)
 {
-    // 去标签，基于一个简易的状态机
     enum status
     {
         LABLE,
-        CONTENT
+        CONTENT,
+        SCRIPT,
+        STYLE,
+        COMMENT
     };
 
     enum status s = LABLE;
-    for (char c : file)
+    std::string tag;
+    bool lastWasSpace = true; // 避免多余空格
+
+    for (size_t i = 0; i < file.size(); i++)
     {
+        char c = file[i];
+
         switch (s)
         {
         case LABLE:
             if (c == '>')
-                s = CONTENT;
-            break;
-        case CONTENT:
-            if (c == '<')
-                s = LABLE;
+            {
+                // 转换为小写并去除属性部分
+                std::string cleanTag;
+                for (char tc : tag) {
+                    if (isspace(tc)) break; // 遇到空格停止，忽略属性
+                    cleanTag.push_back(tolower(tc));
+                }
+                
+                if (cleanTag == "script")
+                    s = SCRIPT;
+                else if (cleanTag == "style")
+                    s = STYLE;
+                else
+                {
+                    s = CONTENT;
+                    if (!content->empty() && !lastWasSpace)
+                    {
+                        content->push_back(' '); // 标签切换时插入空格
+                        lastWasSpace = true;
+                    }
+                }
+                tag.clear();
+            }
+            else if (c == '<')
+            {
+                tag.clear();
+                // 处理 HTML 注释 <!--
+                if (file.substr(i, 4) == "<!--")
+                {
+                    s = COMMENT;
+                    i += 3; // 跳过 <!--
+                }
+            }
             else
             {
-                // 我们不想保留原始文件中的\n，因为我们想用\n作为html解析之后文本的分隔符
-                if (c == '\n')
-                    c = ' ';
-                content->push_back(c);
+                tag.push_back(c); // 不再转换为小写，后面统一处理
             }
             break;
+
+        case SCRIPT:
+            if (c == '<' && file.substr(i, 9) == "</script>")
+            {
+                s = LABLE;
+                i += 8;
+            }
+            break;
+
+        case STYLE:
+            if (c == '<' && file.substr(i, 8) == "</style>")
+            {
+                s = LABLE;
+                i += 7;
+            }
+            break;
+
+        case COMMENT:
+            if (c == '-' && file.substr(i, 3) == "-->")
+            {
+                s = LABLE;
+                i += 2; // 跳过 -->
+            }
+            break;
+
+        case CONTENT:
+            if (c == '<')
+            {
+                s = LABLE;
+                tag.clear();
+            }
+            else
+            {
+                if (c == '\n' || c == '\t')
+                    c = ' ';
+
+                if (c == ' ' && lastWasSpace)
+                    continue; // 避免多个空格
+
+                content->push_back(c);
+                lastWasSpace = (c == ' '); // 更新空格状态
+            }
+            break;
+
         default:
             break;
         }
@@ -138,7 +214,7 @@ static bool ParseContent(const std::string &file, std::string *content)
 
 static bool ParseUrl(const std::string &file_path, std::string *url)
 {
-    std::string url_head = "https://www.boost.org/doc/libs/1_78_0/doc/html";
+    std::string url_head = "https://www.ruanyifeng.com/blog";
     std::string url_tail = file_path.substr(src_path.size());
 
     *url = url_head + url_tail;
