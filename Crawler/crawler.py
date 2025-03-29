@@ -38,38 +38,45 @@ class RuanYiFengCrawler:
         """清理文件名中的非法字符"""
         return re.sub(r'[\\/*?:"<>|]', "_", filename).strip()
     
-    def create_output_dir(self):
-        """创建输出目录"""
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
+    def create_directory_structure(self, path):
+        """根据URL路径创建目录结构"""
+        full_path = os.path.join(self.output_dir, path.lstrip('/'))
+        if not os.path.exists(full_path):
+            os.makedirs(full_path, exist_ok=True)
+        return full_path
     
     def save_html(self, url, html):
-        """保存HTML到文件"""
+        """保存HTML到文件，保留原始目录结构"""
         parsed = urlparse(url)
-        path_parts = [p for p in parsed.path.split('/') if p]
+        path = parsed.path
         
-        # 如果是文章页，按日期和标题组织文件名
-        if len(path_parts) >= 3 and path_parts[0] == 'blog' and path_parts[1] == 'archives':
+        # 创建对应的目录结构
+        dir_path = os.path.dirname(path)
+        full_dir_path = self.create_directory_structure(dir_path)
+        
+        # 确定文件名
+        if path.endswith('/'):
+            filename = "index.html"
+        else:
+            filename = os.path.basename(path) or "index.html"
+            if not filename.endswith('.html'):
+                filename += ".html"
+        
+        # 如果是文章页，使用更友好的文件名
+        if '/blog/archives/' in path:
             soup = BeautifulSoup(html, 'html.parser')
             title_tag = soup.find('title')
-            title = title_tag.get_text().strip() if title_tag else path_parts[-1]
-            title = self.sanitize_filename(title)
-            
-            date_str = path_parts[2] if len(path_parts) > 2 else "unknown_date"
-            try:
-                datetime.strptime(date_str, "%Y/%m")
-                filename = f"{date_str.replace('/', '-')}_{title}.html"
-            except ValueError:
+            if title_tag:
+                title = self.sanitize_filename(title_tag.get_text().strip())
                 filename = f"{title}.html"
-        else:
-            filename = "_".join(path_parts) + ".html" if path_parts else "index.html"
         
-        filepath = os.path.join(self.output_dir, filename)
+        filepath = os.path.join(full_dir_path, filename)
         
+        # 处理重复文件名
         counter = 1
         while os.path.exists(filepath):
             name, ext = os.path.splitext(filename)
-            filepath = os.path.join(self.output_dir, f"{name}_{counter}{ext}")
+            filepath = os.path.join(full_dir_path, f"{name}_{counter}{ext}")
             counter += 1
         
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -127,7 +134,10 @@ class RuanYiFengCrawler:
     
     def crawl(self, max_pages=float('inf')):
         """开始爬取"""
-        self.create_output_dir()
+        # 创建根目录
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        
         pages_crawled = 0
         
         while self.to_visit and pages_crawled < max_pages:
@@ -147,12 +157,10 @@ class RuanYiFengCrawler:
             self.visited.add(url)
             pages_crawled += 1
             
-            # 增加随机延迟（1-3秒）
-            time.sleep(1 + 2 * random.random())
+
         
         print(f"Crawling completed. Total pages crawled: {pages_crawled}")
 
 if __name__ == "__main__":
-    import random
     crawler = RuanYiFengCrawler()
     crawler.crawl()
