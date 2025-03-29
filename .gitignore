@@ -3,3 +3,6 @@ test*
 raw.txt
 .vscode/
 parser
+cpp-httplib
+cppjieba
+dict

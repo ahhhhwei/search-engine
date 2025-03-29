@@ -1,7 +1,7 @@
 #include "cpp-httplib/httplib.h"
 #include "searcher.hpp"
 
-const std::string input = "data/raw_html/raw.txt";
+const std::string input = "../Crawler/raw.txt";
 const std::string root_path = "./wwwroot";
 
 int main()
