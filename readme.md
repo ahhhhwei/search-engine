@@ -59,7 +59,7 @@
    ./parser
    ```
 
-10. 数据预处理
+10. 运行服务
     ```bash
     ./http_server
     ```
