@@ -1,7 +1,9 @@
 # Site Search Engine
 
 <div align="center">
+
 [简体中文](readme.md) | English
+
 </div>
 
 ## Introduction
