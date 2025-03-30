@@ -214,7 +214,7 @@ static bool ParseContent(const std::string &file, std::string *content)
 
 static bool ParseUrl(const std::string &file_path, std::string *url)
 {
-    std::string url_head = "https://www.ruanyifeng.com/blog";
+    std::string url_head = "https://www.ruanyifeng.com";
     std::string url_tail = file_path.substr(src_path.size());
 
     *url = url_head + url_tail;
