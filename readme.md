@@ -1,4 +1,11 @@
 # 站内搜索引擎
+## 介绍
+这是一个简易的搜索引擎项目
+
+## 环境
+基于 C++11、STL、boost库、Jsoncpp、cppjieba、cpp-httplib 等
+
+## 构建
 1. 克隆项目
    ```bash
    git clone https://github.com/ahhhhwei/search-engine.git
@@ -31,6 +38,7 @@
    mkdir third_lib
    cd third_lib
    git clone https://gitee.com/mohatarem/cppjieba.git
+   # 拷贝目录，否则之后make报错
    cd cppjieba
    cp deps/limonp/ include/cppjieba/ -rf
    ```
@@ -63,3 +71,4 @@
     ```bash
     ./http_server
     ```
+
