@@ -1,7 +1,9 @@
 # 站内搜索引擎
 
 <div align="center">
+
 简体中文 | [English](readme.en.md)
+
 </div>
 
 ## 介绍
