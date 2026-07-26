@@ -23,6 +23,7 @@ BROWSER_USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36 "
     "ahhhhwei-search-engine/1.2"
 )
+ORIGINAL_BUILD_SESSION = crawler.build_session
 
 
 def log(message: str, *, error: bool = False) -> None:
@@ -30,7 +31,7 @@ def log(message: str, *, error: bool = False) -> None:
 
 
 def build_ci_session() -> requests.Session:
-    session = crawler.build_session()
+    session = ORIGINAL_BUILD_SESSION()
     session.headers["User-Agent"] = BROWSER_USER_AGENT
     session.headers["Connection"] = "keep-alive"
 
