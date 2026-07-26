@@ -41,14 +41,17 @@ jobs:
         run: python -m pip install -r Crawler/requirements.txt
 
       - name: Crawl Ruan Yifeng blog corpus
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
-          python scripts/crawl_ruanyifeng.py \
+          python scripts/crawl_ruanyifeng_ci.py \
             --output web/data/documents.json \
             --max-pages 1000 \
             --max-content-chars 10000 \
             --max-discovery-pages 50 \
             --min-documents 100 \
-            --delay 0.10
+            --timeout 40 \
+            --delay 0.20
           python - <<'PY'
           import json
           from pathlib import Path
