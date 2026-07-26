@@ -32,7 +32,6 @@ jobs:
       - name: Install Emscripten SDK
         run: |
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
-          "$RUNNER_TEMP/emsdk/emsdk" update
           "$RUNNER_TEMP/emsdk/emsdk" install latest
           "$RUNNER_TEMP/emsdk/emsdk" activate latest
 
