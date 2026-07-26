@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the browser-search corpus from Ruan Yifeng's public blog archive."""
+"""Build the browser-search corpus from Ruan Yifeng's public blog archives."""
 
 from __future__ import annotations
 
@@ -21,16 +21,23 @@ from urllib3.util.retry import Retry
 BASE_URL = "https://www.ruanyifeng.com"
 ARCHIVE_URL = f"{BASE_URL}/blog/archives.html"
 ROBOTS_URL = f"{BASE_URL}/robots.txt"
-ARTICLE_RE = re.compile(r"^https://www\.ruanyifeng\.com/blog/\d{4}/\d{2}/[^/?#]+\.html$")
-USER_AGENT = "ahhhhwei-search-engine/1.0 (+https://github.com/ahhhhwei/search-engine)"
+ARTICLE_RE = re.compile(
+    r"^https://www\.ruanyifeng\.com/blog/\d{4}/\d{2}/[^/?#]+\.html$"
+)
+CATEGORY_RE = re.compile(
+    r"^https://www\.ruanyifeng\.com/blog/[A-Za-z0-9_-]+(?:/index\.html|/)?$"
+)
+USER_AGENT = "ahhhhwei-search-engine/1.1 (+https://github.com/ahhhhwei/search-engine)"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--archive-url", default=ARCHIVE_URL)
     parser.add_argument("--output", default="web/data/documents.json")
-    parser.add_argument("--max-pages", type=int, default=0, help="0 means all archive links")
+    parser.add_argument("--max-pages", type=int, default=0, help="0 means all discovered articles")
     parser.add_argument("--max-content-chars", type=int, default=20000)
+    parser.add_argument("--max-discovery-pages", type=int, default=50)
+    parser.add_argument("--min-documents", type=int, default=100)
     parser.add_argument("--delay", type=float, default=0.10)
     parser.add_argument("--timeout", type=float, default=25.0)
     return parser.parse_args()
@@ -59,11 +66,11 @@ def build_session() -> requests.Session:
 
 def canonicalize(url: str) -> str:
     parts = urlsplit(url)
-    scheme = "https"
     host = parts.netloc.lower()
     if host == "ruanyifeng.com":
         host = "www.ruanyifeng.com"
-    return urlunsplit((scheme, host, parts.path, "", ""))
+    path = parts.path or "/"
+    return urlunsplit(("https", host, path, "", ""))
 
 
 def check_robots(session: requests.Session, timeout: float) -> RobotFileParser:
@@ -80,14 +87,79 @@ def check_robots(session: requests.Session, timeout: float) -> RobotFileParser:
     return parser
 
 
-def discover_articles(html: str, archive_url: str) -> list[str]:
+def fetch_html(session: requests.Session, url: str, timeout: float) -> str:
+    response = session.get(url, timeout=timeout)
+    response.raise_for_status()
+    response.encoding = response.apparent_encoding or response.encoding or "utf-8"
+    return response.text
+
+
+def discover_links(html: str, source_url: str) -> tuple[set[str], set[str]]:
     soup = BeautifulSoup(html, "html.parser")
-    links: set[str] = set()
+    article_urls: set[str] = set()
+    category_urls: set[str] = set()
     for anchor in soup.find_all("a", href=True):
-        url = canonicalize(urljoin(archive_url, anchor["href"]))
+        url = canonicalize(urljoin(source_url, anchor["href"]))
         if ARTICLE_RE.fullmatch(url):
-            links.add(url)
-    return sorted(links, reverse=True)
+            article_urls.add(url)
+        elif CATEGORY_RE.fullmatch(url):
+            category_urls.add(url)
+    return article_urls, category_urls
+
+
+def discover_articles(
+    session: requests.Session,
+    robots: RobotFileParser,
+    archive_url: str,
+    timeout: float,
+    max_discovery_pages: int,
+) -> list[str]:
+    """Discover article URLs from the main archive and its category archives.
+
+    The main archive only exposes the newest articles directly. Category archive
+    pages contain the historical article links, so relying on archives.html alone
+    makes the crawl brittle and incomplete.
+    """
+    archive_html = fetch_html(session, archive_url, timeout)
+    article_urls, category_urls = discover_links(archive_html, archive_url)
+
+    category_urls.discard(canonicalize(f"{BASE_URL}/blog/"))
+    ordered_categories = sorted(category_urls)
+    if max_discovery_pages > 0:
+        ordered_categories = ordered_categories[:max_discovery_pages]
+
+    print(
+        f"main archive exposed {len(article_urls)} article URLs and "
+        f"{len(ordered_categories)} category archives"
+    )
+
+    successful_categories = 0
+    for index, category_url in enumerate(ordered_categories, start=1):
+        if not robots.can_fetch(USER_AGENT, category_url):
+            print(f"skip discovery page disallowed by robots.txt: {category_url}", file=sys.stderr)
+            continue
+        try:
+            category_html = fetch_html(session, category_url, timeout)
+            discovered, _ = discover_links(category_html, category_url)
+            article_urls.update(discovered)
+            successful_categories += 1
+            print(
+                f"discovery {index}/{len(ordered_categories)}: "
+                f"{category_url} -> {len(discovered)} articles; "
+                f"total unique {len(article_urls)}"
+            )
+        except requests.RequestException as error:
+            print(f"skip discovery page failure: {category_url}: {error}", file=sys.stderr)
+
+    if successful_categories == 0:
+        raise RuntimeError("no category archive page could be fetched")
+    if len(article_urls) < 100:
+        raise RuntimeError(
+            f"only {len(article_urls)} article URLs were discovered; expected at least 100"
+        )
+
+    # The URL path begins with YYYY/MM, so reverse lexical order is newest first.
+    return sorted(article_urls, reverse=True)
 
 
 def normalize_text(text: str) -> str:
@@ -155,10 +227,8 @@ def crawl(
             print(f"skip disallowed by robots.txt: {url}", file=sys.stderr)
             continue
         try:
-            response = session.get(url, timeout=timeout)
-            response.raise_for_status()
-            response.encoding = response.apparent_encoding or response.encoding or "utf-8"
-            document = parse_article(response.text, url, max_content_chars)
+            html = fetch_html(session, url, timeout)
+            document = parse_article(html, url, max_content_chars)
             if document:
                 documents.append(document)
             else:
@@ -172,9 +242,14 @@ def crawl(
     return documents
 
 
-def write_documents(documents: list[dict[str, str]], output: Path) -> None:
-    if len(documents) < 20:
-        raise RuntimeError(f"only {len(documents)} documents were produced; refusing to deploy")
+def write_documents(
+    documents: list[dict[str, str]], output: Path, min_documents: int
+) -> None:
+    if len(documents) < min_documents:
+        raise RuntimeError(
+            f"only {len(documents)} documents were produced; "
+            f"minimum is {min_documents}; refusing to deploy"
+        )
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
     temporary.write_text(
@@ -189,15 +264,16 @@ def main() -> int:
     args = parse_args()
     session = build_session()
     robots = check_robots(session, args.timeout)
-    archive_response = session.get(args.archive_url, timeout=args.timeout)
-    archive_response.raise_for_status()
-    archive_response.encoding = archive_response.apparent_encoding or "utf-8"
-    urls = discover_articles(archive_response.text, args.archive_url)
-    if not urls:
-        raise RuntimeError("no article links were found on the archive page")
+    urls = discover_articles(
+        session,
+        robots,
+        args.archive_url,
+        args.timeout,
+        args.max_discovery_pages,
+    )
     if args.max_pages > 0:
         urls = urls[: args.max_pages]
-    print(f"discovered {len(urls)} article URLs")
+    print(f"crawling {len(urls)} of the discovered article URLs")
     documents = crawl(
         session,
         robots,
@@ -206,7 +282,7 @@ def main() -> int:
         args.delay,
         args.max_content_chars,
     )
-    write_documents(documents, Path(args.output))
+    write_documents(documents, Path(args.output), args.min_documents)
     return 0
 
 
