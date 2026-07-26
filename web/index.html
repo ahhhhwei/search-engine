@@ -3,37 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="完全运行在浏览器中的 C++ WebAssembly 站内搜索引擎">
-  <title>C++ WebAssembly 搜索引擎</title>
+  <meta name="description" content="使用 C++ WebAssembly 在浏览器中搜索阮一峰网络日志">
+  <title>阮一峰网络日志搜索</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <header class="hero">
     <div class="hero__inner">
-      <p class="eyebrow">C++ · Inverted Index · WebAssembly</p>
-      <h1>浏览器内搜索引擎</h1>
-      <p class="subtitle">倒排索引和相关性排序由 C++ 编译成 WebAssembly 后在本地执行，无后端服务器。</p>
+      <p class="eyebrow">阮一峰网络日志 · C++ · Inverted Index · WebAssembly</p>
+      <h1>阮一峰网络日志搜索</h1>
+      <p class="subtitle">GitHub Actions 从公开归档重新抓取文章，倒排索引与相关性排序由 C++ WebAssembly 在浏览器本地完成。</p>
 
       <form id="search-form" class="search-box" role="search">
-        <label class="sr-only" for="query">搜索关键词</label>
+        <label class="sr-only" for="query">搜索阮一峰网络日志</label>
         <input id="query" name="query" type="search" autocomplete="off"
-               placeholder="例如：倒排索引、WebAssembly、爬虫" disabled>
+               placeholder="例如：JavaScript、科技爱好者周刊、创业" disabled>
         <button id="search-button" type="submit" disabled>搜索</button>
       </form>
 
       <div class="quick-queries" aria-label="示例查询">
-        <button type="button" data-query="倒排索引">倒排索引</button>
-        <button type="button" data-query="WebAssembly">WebAssembly</button>
-        <button type="button" data-query="GitHub Pages">GitHub Pages</button>
+        <button type="button" data-query="JavaScript">JavaScript</button>
+        <button type="button" data-query="科技爱好者周刊">科技爱好者周刊</button>
+        <button type="button" data-query="创业">创业</button>
       </div>
 
-      <p id="status" class="status" aria-live="polite">正在加载 WebAssembly 与索引数据……</p>
+      <p id="status" class="status" aria-live="polite">正在加载 WebAssembly 与阮一峰博客索引……</p>
     </div>
   </header>
 
   <main class="layout">
     <section class="metrics" aria-label="索引统计">
-      <article><strong id="document-count">—</strong><span>文档数</span></article>
+      <article><strong id="document-count">—</strong><span>博客文章</span></article>
       <article><strong id="term-count">—</strong><span>词项数</span></article>
       <article><strong id="elapsed-time">—</strong><span>查询耗时</span></article>
       <article><strong>C++ / Wasm</strong><span>检索核心</span></article>
@@ -48,12 +48,16 @@
     </section>
 
     <aside class="architecture">
-      <h2>运行链路</h2>
+      <h2>数据与运行链路</h2>
       <ol>
-        <li>GitHub Actions 使用 Emscripten 编译 C++。</li>
-        <li>GitHub Pages 托管 HTML、JavaScript、Wasm 与文档数据。</li>
-        <li>访问者浏览器构建倒排索引并执行查询。</li>
+        <li>GitHub Actions 读取阮一峰网络日志公开归档并抓取文章内容。</li>
+        <li>构建流程生成浏览器索引数据，并使用 Emscripten 编译 C++。</li>
+        <li>访问者浏览器构建倒排索引、执行查询，结果链接回原始文章。</li>
       </ol>
+      <p>当前构建最多索引归档中的最近 1000 篇文章；每周自动更新一次。</p>
+      <a href="https://www.ruanyifeng.com/blog/" target="_blank" rel="noopener noreferrer">
+        访问阮一峰网络日志
+      </a>
       <a href="https://github.com/ahhhhwei/search-engine" target="_blank" rel="noopener noreferrer">
         查看 GitHub 源码
       </a>
