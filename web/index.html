@@ -3,37 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="使用 C++ WebAssembly 在浏览器中搜索阮一峰网络日志">
-  <title>阮一峰网络日志搜索</title>
+  <meta name="description" content="使用 C++ WebAssembly 搜索阮一峰科技爱好者周刊官方语料">
+  <title>阮一峰科技爱好者周刊搜索</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <header class="hero">
     <div class="hero__inner">
-      <p class="eyebrow">阮一峰网络日志 · C++ · Inverted Index · WebAssembly</p>
-      <h1>阮一峰网络日志搜索</h1>
-      <p class="subtitle">GitHub Actions 从公开归档重新抓取文章，倒排索引与相关性排序由 C++ WebAssembly 在浏览器本地完成。</p>
+      <p class="eyebrow">阮一峰科技爱好者周刊 · C++ · Inverted Index · WebAssembly</p>
+      <h1>阮一峰周刊全文搜索</h1>
+      <p class="subtitle">索引数据来自阮一峰本人维护的官方开源仓库 ruanyf/weekly；倒排索引与相关性排序由 C++ WebAssembly 在浏览器本地完成。</p>
 
       <form id="search-form" class="search-box" role="search">
-        <label class="sr-only" for="query">搜索阮一峰网络日志</label>
+        <label class="sr-only" for="query">搜索阮一峰科技爱好者周刊</label>
         <input id="query" name="query" type="search" autocomplete="off"
-               placeholder="例如：JavaScript、科技爱好者周刊、创业" disabled>
+               placeholder="例如：人工智能、编程、创业、芯片" disabled>
         <button id="search-button" type="submit" disabled>搜索</button>
       </form>
 
       <div class="quick-queries" aria-label="示例查询">
-        <button type="button" data-query="JavaScript">JavaScript</button>
-        <button type="button" data-query="科技爱好者周刊">科技爱好者周刊</button>
+        <button type="button" data-query="人工智能">人工智能</button>
+        <button type="button" data-query="编程">编程</button>
         <button type="button" data-query="创业">创业</button>
       </div>
 
-      <p id="status" class="status" aria-live="polite">正在加载 WebAssembly 与阮一峰博客索引……</p>
+      <p id="status" class="status" aria-live="polite">正在加载 WebAssembly 与官方周刊索引……</p>
     </div>
   </header>
 
   <main class="layout">
     <section class="metrics" aria-label="索引统计">
-      <article><strong id="document-count">—</strong><span>博客文章</span></article>
+      <article><strong id="document-count">—</strong><span>周刊期数</span></article>
       <article><strong id="term-count">—</strong><span>词项数</span></article>
       <article><strong id="elapsed-time">—</strong><span>查询耗时</span></article>
       <article><strong>C++ / Wasm</strong><span>检索核心</span></article>
@@ -50,16 +50,19 @@
     <aside class="architecture">
       <h2>数据与运行链路</h2>
       <ol>
-        <li>GitHub Actions 读取阮一峰网络日志公开归档并抓取文章内容。</li>
-        <li>构建流程生成浏览器索引数据，并使用 Emscripten 编译 C++。</li>
-        <li>访问者浏览器构建倒排索引、执行查询，结果链接回原始文章。</li>
+        <li>构建流程读取阮一峰官方开源仓库 ruanyf/weekly 的 Markdown 正文。</li>
+        <li>Python 将全部周刊转换为浏览器搜索数据，Emscripten 编译 C++ 检索核心。</li>
+        <li>访问者浏览器建立倒排索引并执行查询，结果链接到官方开源原文。</li>
       </ol>
-      <p>当前构建最多索引归档中的最近 1000 篇文章；每周自动更新一次。</p>
+      <p>当前固定使用经过验证的官方语料版本，部署过程不访问 ruanyifeng.com，因此不会再因目标站点对 GitHub Actions 返回 403 而失败。</p>
+      <a href="https://github.com/ruanyf/weekly" target="_blank" rel="noopener noreferrer">
+        查看阮一峰官方周刊仓库
+      </a>
       <a href="https://www.ruanyifeng.com/blog/" target="_blank" rel="noopener noreferrer">
         访问阮一峰网络日志
       </a>
       <a href="https://github.com/ahhhhwei/search-engine" target="_blank" rel="noopener noreferrer">
-        查看 GitHub 源码
+        查看搜索引擎源码
       </a>
     </aside>
   </main>
