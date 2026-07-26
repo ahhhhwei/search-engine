@@ -8,4 +8,6 @@ dict
 debug
 http_server
 
-
+# WebAssembly build outputs
+/web/dist/
+/build/

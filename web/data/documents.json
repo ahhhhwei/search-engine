@@ -1,0 +1,52 @@
+[
+  {
+    "title": "项目架构：从 HTTP 服务迁移到 WebAssembly",
+    "url": "https://github.com/ahhhhwei/search-engine",
+    "content": "该项目将 C++ 搜索核心与网络层分离。原生版本可以通过 cpp-httplib 提供 HTTP 服务，浏览器版本则把相同的检索思想编译成 WebAssembly，在用户浏览器中构建索引和执行查询。"
+  },
+  {
+    "title": "Crawler：阮一峰博客爬虫",
+    "url": "https://github.com/ahhhhwei/search-engine/blob/master/Crawler/crawler.py",
+    "content": "Python 爬虫从阮一峰博客入口开始，解析站内链接并保存 HTML。爬虫负责采集公开网页，后续 parser 再提取标题、正文和 URL。"
+  },
+  {
+    "title": "Parser：HTML 文档预处理",
+    "url": "https://github.com/ahhhhwei/search-engine/blob/master/src/parser.cc",
+    "content": "C++ Parser 递归枚举 HTML 文件，过滤 script、style 与注释，提取 title 和正文，并使用控制字符分隔标题、内容和 URL，生成 raw.txt。"
+  },
+  {
+    "title": "倒排索引与正排索引",
+    "url": "https://github.com/ahhhhwei/search-engine/blob/master/src/index.hpp",
+    "content": "正排索引根据 doc_id 保存文档标题、正文与 URL。倒排索引把词项映射到文档拉链，使搜索引擎无需遍历全部文档即可定位候选结果。"
+  },
+  {
+    "title": "相关性排序：标题权重与正文词频",
+    "url": "https://github.com/ahhhhwei/search-engine/blob/master/src/searcher.hpp",
+    "content": "项目按照词项在标题和正文中的出现次数计算相关度。标题命中获得更高权重，多个查询词命中同一文档时累加得分，再按得分降序返回结果。"
+  },
+  {
+    "title": "WebAssembly：让 C++ 在浏览器运行",
+    "url": "https://github.com/ahhhhwei/search-engine/tree/master/wasm",
+    "content": "Emscripten 将 C++ 搜索引擎编译为 search_engine.wasm。JavaScript 只负责加载文档、传递查询和渲染结果，倒排索引与排序逻辑在 WebAssembly 中执行。"
+  },
+  {
+    "title": "GitHub Pages：无需服务器的在线演示",
+    "url": "https://ahhhhwei.github.io/search-engine/",
+    "content": "GitHub Pages 托管 HTML、CSS、JavaScript、documents.json 和 WebAssembly 文件。搜索计算使用访问者设备，不需要常驻 Linux 服务器、数据库或开放端口。"
+  },
+  {
+    "title": "GitHub Actions：自动编译和发布",
+    "url": "https://github.com/ahhhhwei/search-engine/actions",
+    "content": "每次推送到 master 后，GitHub Actions 先运行原生 C++ 冒烟测试，再安装 Emscripten、编译 Wasm，最后把 web 目录发布到 GitHub Pages。"
+  },
+  {
+    "title": "中文查询：UTF-8 汉字与二元词项",
+    "url": "https://github.com/ahhhhwei/search-engine/blob/master/wasm/search_engine.cpp",
+    "content": "浏览器版对英文进行小写归一化，对连续中文字符生成单字词项和二元词项，因此无需下载大型分词词典也能支持常见中文短语检索。"
+  },
+  {
+    "title": "替换演示数据：从 raw.txt 生成 documents.json",
+    "url": "https://github.com/ahhhhwei/search-engine/blob/master/scripts/raw_to_documents.py",
+    "content": "运行 python3 scripts/raw_to_documents.py 即可把原 parser 生成的 Crawler/raw.txt 转换为网页使用的 JSON 数据。生成后重新推送，Actions 会自动部署新的索引内容。"
+  }
+]
